@@ -1,0 +1,390 @@
+MongoDB — Métodos, operadores e índices
+
+## 1. Ordenação com `sort()`
+
+O método `sort()` permite ordenar os documentos de acordo com um campo.
+
+```javascript
+db.students.find().sort({ name: 1 })
+```
+
+- `1`: ordem crescente — por exemplo, ordem alfabética para textos.
+- `-1`: ordem decrescente — por exemplo, ordem alfabética inversa para textos.
+
+Também é possível ordenar por outros campos, como `age`, `registerDate` etc.
+
+---
+
+## 2. Limitação de resultados com `limit()`
+
+O método `limit()` define a quantidade máxima de documentos que será retornada pela consulta.
+
+```javascript
+db.students.find().limit(3)
+```
+
+Nesse exemplo, serão retornados no máximo três documentos.
+
+---
+
+## 3. Criação e exclusão de collections e databases
+
+Para criar uma collection explicitamente, usamos `createCollection()`:
+
+```javascript
+db.createCollection("teachers")
+```
+
+Para excluir a database atualmente selecionada, usamos:
+
+```javascript
+db.dropDatabase()
+```
+
+Uma **collection** é um grupo de documentos, enquanto uma **database** é um grupo de collections.
+
+---
+
+## 4. Inserção de documentos
+
+Para inserir um documento em uma collection, usamos `insertOne()`:
+
+```javascript
+db.students.insertOne({
+  name: "The Rev",
+  status: "Alive"
+})
+```
+
+Para inserir vários documentos, usamos `insertMany()`:
+
+```javascript
+db.students.insertMany([
+  { name: "SpongeBob" },
+  { name: "Sandy" }
+])
+```
+
+---
+
+## 5. Registro de data e hora
+
+Para registrar automaticamente a data e a hora atuais, usamos `new Date()`:
+
+```javascript
+db.students.insertOne({
+  name: "SpongeBob",
+  registerDate: new Date()
+})
+```
+
+Também é possível informar uma data específica:
+
+```javascript
+registerDate: new Date("2026-11-08T15:41:06-03:00")
+```
+
+---
+
+## 6. Projeção de campos
+
+O segundo objeto de `find()` é chamado de **projeção**. Ele define quais campos serão exibidos no resultado.
+
+- O primeiro objeto indica o filtro da busca.
+- O segundo objeto indica os campos que serão exibidos.
+- Um primeiro objeto vazio (`{}`) significa que todos os documentos serão buscados.
+
+Exemplo:
+
+```javascript
+db.students.find({}, { name: 1, _id: 0 })
+```
+
+Nesse caso, todos os documentos serão buscados, mas apenas o campo `name` será exibido. O campo `_id` é ocultado explicitamente.
+
+Também é possível usar `true` e `false`, embora seja comum usar `1` e `0`:
+
+```javascript
+db.students.find({}, { name: true, _id: false })
+```
+
+---
+
+## 7. Atualização de documentos
+
+Para atualizar um único documento, usamos `updateOne()`. Para atualizar vários documentos, usamos `updateMany()`.
+
+```javascript
+db.students.updateOne(
+  { name: "The Rev" },
+  { $set: { status: "Alive" } }
+)
+```
+
+Nesse exemplo, o MongoDB procura um documento cujo campo `name` seja `"The Rev"` e altera o campo `status` para `"Alive"`.
+
+É uma boa prática utilizar um identificador único, como o `_id`, sempre que possível, em vez de um campo que pode se repetir, como `name`.
+
+### Atualização de vários documentos
+
+```javascript
+db.students.updateMany(
+  { status: "Alive" },
+  { $set: { active: true } }
+)
+```
+
+Se o campo que está sendo atualizado ainda não existir, o MongoDB o criará automaticamente.
+
+Quando o primeiro objeto de filtro é `{}`, todos os documentos da collection são selecionados:
+
+```javascript
+db.students.updateMany(
+  {},
+  { $set: { active: true } }
+)
+```
+
+---
+
+## 8. Remoção de campos com `$unset`
+
+Podemos remover um campo de um documento usando o operador `$unset`:
+
+```javascript
+db.students.updateOne(
+  { name: "The Rev" },
+  { $unset: { status: "" } }
+)
+```
+
+Nesse exemplo, o campo `status` será removido do documento encontrado.
+
+---
+
+## 9. Verificação da existência de campos com `$exists`
+
+O operador `$exists` verifica se um campo existe ou não existe.
+
+Exemplo:
+
+```javascript
+db.students.updateMany(
+  { fullTime: { $exists: false } },
+  { $set: { fullTime: true } }
+)
+```
+
+Nesse caso, são selecionados os documentos que não possuem o campo `fullTime`, e esse campo é criado com o valor `true`.
+
+---
+
+## 10. Exclusão de documentos
+
+Para excluir documentos, usamos `deleteOne()` ou `deleteMany()`.
+
+Exemplo:
+
+```javascript
+db.students.deleteMany({
+  registerDate: { $exists: false }
+})
+```
+
+Esse comando exclui todos os documentos que não possuem o campo `registerDate`.
+
+> Observação: `delete` remove documentos inteiros. Para remover apenas um campo, usamos `$unset`.
+
+---
+
+## 11. Operadores de comparação
+
+Os operadores de comparação são usados para filtrar documentos.
+
+Exemplo com `$ne`:
+
+```javascript
+db.students.find({
+  name: { $ne: "SpongeBob" }
+})
+```
+
+Esse comando retorna os documentos cujo campo `name` é diferente de `"SpongeBob"`.
+
+| Operador | Significado |
+|---|---|
+| `$gt` | Maior que |
+| `$lt` | Menor que |
+| `$gte` | Maior ou igual a |
+| `$lte` | Menor ou igual a |
+| `$eq` | Igual a |
+| `$ne` | Diferente de |
+
+Exemplo:
+
+```javascript
+db.students.find({ age: { $gt: 22 } })
+```
+
+Esse comando retorna os estudantes com idade maior que 22.
+
+---
+
+## 12. Operadores `$in` e `$nin`
+
+O operador `$in` busca documentos cujo valor esteja dentro de uma lista de valores:
+
+```javascript
+db.students.find({
+  name: { $in: ["SpongeBob", "Sandy", "Gary"] }
+})
+```
+
+O operador `$nin` faz o contrário: retorna os documentos cujo valor não esteja na lista informada.
+
+```javascript
+db.students.find({
+  name: { $nin: ["SpongeBob", "Sandy", "Gary"] }
+})
+```
+
+---
+
+## 13. Operadores lógicos
+
+Os operadores lógicos permitem combinar condições em uma consulta.
+
+### `$and`
+
+Todas as condições precisam ser verdadeiras:
+
+```javascript
+db.students.find({
+  $and: [
+    { fullTime: true },
+    { age: { $gt: 22 } }
+  ]
+})
+```
+
+### `$or`
+
+Pelo menos uma das condições precisa ser verdadeira:
+
+```javascript
+db.students.find({
+  $or: [
+    { fullTime: true },
+    { age: { $gt: 22 } }
+  ]
+})
+```
+
+### `$not`
+
+Inverte o resultado de uma condição:
+
+```javascript
+db.students.find({
+  age: { $not: { $gt: 22 } }
+})
+```
+
+### `$nor`
+
+Retorna documentos nos quais nenhuma das condições é verdadeira:
+
+```javascript
+db.students.find({
+  $nor: [
+    { fullTime: true },
+    { age: { $gt: 22 } }
+  ]
+})
+```
+
+| Operador | Significado | Funcionamento |
+|---|---|---|
+| `$and` | E | Todas as condições precisam ser verdadeiras. |
+| `$or` | OU | Pelo menos uma condição precisa ser verdadeira. |
+| `$not` | NÃO | Inverte o resultado de uma condição. |
+| `$nor` | NÃO OU | Nenhuma das condições pode ser verdadeira. |
+
+---
+
+## 14. Índices
+
+Um índice ajuda o MongoDB a localizar documentos com mais rapidez, evitando que ele precise verificar todos os documentos da collection em determinadas consultas.
+
+Para analisar o plano de execução de uma consulta, usamos `explain("executionStats")`:
+
+```javascript
+db.students.find({ name: "SpongeBob" }).explain("executionStats")
+```
+
+Sem um índice adequado, a consulta pode fazer uma busca linear, examinando os documentos um por um.
+
+### Criação de um índice
+
+```javascript
+db.students.createIndex({ name: 1 })
+```
+
+- `1`: índice em ordem crescente.
+- `-1`: índice em ordem decrescente.
+
+Exemplo:
+
+```javascript
+db.students.createIndex({ name: -1 })
+```
+
+### Consulta dos índices
+
+```javascript
+db.students.getIndexes()
+```
+
+### Exclusão de um índice
+
+```javascript
+db.students.dropIndex("name_1")
+```
+
+O índice do campo `_id` é criado automaticamente pelo MongoDB e não pode ser removido enquanto a collection existir.
+
+### Vantagens e desvantagens
+
+**Vantagem:** os índices podem acelerar consultas, filtros e ordenações.
+
+**Desvantagens:**
+
+- ocupam espaço adicional em memória e armazenamento;
+- podem tornar operações de inserção, atualização e exclusão mais lentas;
+- exigem manutenção sempre que os dados são alterados, pois as estruturas dos índices também precisam ser atualizadas.
+
+Por isso, não é recomendável criar índices indiscriminadamente. Eles devem ser criados de acordo com as consultas mais frequentes e analisados com `explain()`.
+
+---
+
+## 15. Opções de criação de uma collection
+
+Ao criar uma collection, podemos definir algumas opções, como `capped`, `size` e `max`:
+
+```javascript
+db.createCollection("teachers", {
+  capped: true,
+  size: 100000,
+  max: 100
+})
+```
+
+Nesse exemplo:
+
+- `capped: true` cria uma collection limitada, cujo tamanho máximo é controlado pelo MongoDB;
+- `size: 100000` define o tamanho máximo em bytes;
+- `max: 100` define a quantidade máxima de documentos, quando aplicável.
+
+Collections capped mantêm um tamanho fixo e, quando atingem o limite, os documentos mais antigos podem ser substituídos por documentos novos.
+
+> Observação: a opção `autoIndexId` aparece em materiais antigos, mas não deve ser utilizada em exemplos atuais. O índice de `_id` é criado automaticamente pelo MongoDB.
